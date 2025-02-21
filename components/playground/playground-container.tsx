@@ -8,6 +8,7 @@ import { Play, Trash2, Save, Share2, Code2, Copy, Download, Upload } from 'lucid
 import { useToast } from '@/hooks/use-toast';
 import * as prettier from 'prettier/standalone';
 import * as babel from '@babel/standalone';
+import parserBabel from 'prettier/parser-babel';
 
 const DEFAULT_CODE = `// Welcome to JavaScript Playground!
 // Try writing some code and click "Run" to see the output
@@ -29,33 +30,7 @@ export function PlaygroundContainer() {
   const [isExecuting, setIsExecuting] = useState(false);
   const [isEditorReady, setIsEditorReady] = useState(false);
   const { toast } = useToast();
-  const monaco = useMonaco();
-  const editorRef = useRef(null);
-
-  // Configure Monaco editor on mount
-  useEffect(() => {
-    if (monaco) {
-      try {
-        // Configure JavaScript defaults
-        monaco.languages.typescript.javascriptDefaults.setDiagnosticsOptions({
-          noSemanticValidation: false,
-          noSyntaxValidation: false,
-        });
-
-        // Enable type definitions
-        monaco.languages.typescript.javascriptDefaults.setCompilerOptions({
-          target: monaco.languages.typescript.ScriptTarget.ESNext,
-          allowNonTsExtensions: true,
-          moduleResolution: monaco.languages.typescript.ModuleResolutionKind.NodeJs,
-          module: monaco.languages.typescript.ModuleKind.CommonJS,
-          noEmit: true,
-          typeRoots: ['node_modules/@types'],
-        });
-      } catch (error) {
-        console.error('Monaco editor configuration error:', error);
-      }
-    }
-  }, [monaco]);
+  const editorRef = useRef<any>(null);
 
   // Load saved code on mount
   useEffect(() => {
@@ -101,7 +76,7 @@ export function PlaygroundContainer() {
     }).join(' ');
   }, []);
 
-  const handleEditorDidMount = (editor: any, monaco: any) => {
+  const handleEditorDidMount = (editor: any) => {
     editorRef.current = editor;
     setIsEditorReady(true);
   };
@@ -178,14 +153,7 @@ export function PlaygroundContainer() {
     try {
       const formatted = prettier.format(code, {
         parser: 'babel',
-        plugins: [{
-          parsers: {
-            babel: {
-              parse: (text: string) => babel.parse(text, { sourceType: 'module' }),
-              astFormat: 'estree',
-            }
-          }
-        }],
+        plugins: [parserBabel],
         semi: true,
         singleQuote: true,
         printWidth: 80,
@@ -211,9 +179,9 @@ export function PlaygroundContainer() {
   }, [code, toast]);
 
   const handleClear = useCallback(() => {
-    setCode(DEFAULT_CODE);
-    setOutput('');
     try {
+      setCode(DEFAULT_CODE);
+      setOutput('');
       localStorage.removeItem('playground-code');
       toast({
         title: "Cleared",
@@ -221,6 +189,11 @@ export function PlaygroundContainer() {
       });
     } catch (error) {
       console.error('Error clearing code:', error);
+      toast({
+        title: "Error",
+        description: "Failed to clear code",
+        variant: "destructive",
+      });
     }
   }, [toast]);
 
