@@ -6,8 +6,8 @@ import { Button } from '@/components/ui/button';
 import { Card } from '@/components/ui/card';
 import { Play, Trash2, Save, Share2, Code2, Copy, Download, Upload } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
-import prettier from 'prettier/standalone';
-import parserBabel from 'prettier/parser-babel';
+import * as prettier from 'prettier/standalone';
+import * as babel from '@babel/standalone';
 
 const DEFAULT_CODE = `// Welcome to JavaScript Playground!
 // Try writing some code and click "Run" to see the output
@@ -178,15 +178,29 @@ export function PlaygroundContainer() {
     try {
       const formatted = prettier.format(code, {
         parser: 'babel',
-        plugins: [parserBabel],
+        plugins: [{
+          parsers: {
+            babel: {
+              parse: (text: string) => babel.parse(text, { sourceType: 'module' }),
+              astFormat: 'estree',
+            }
+          }
+        }],
         semi: true,
         singleQuote: true,
+        printWidth: 80,
+        trailingComma: 'es5',
       });
-      setCode(formatted);
-      toast({
-        title: "Formatted",
-        description: "Code has been formatted successfully",
-      });
+      
+      if (typeof formatted === 'string') {
+        setCode(formatted);
+        toast({
+          title: "Formatted",
+          description: "Code has been formatted successfully",
+        });
+      } else {
+        throw new Error('Formatting failed');
+      }
     } catch (err: any) {
       toast({
         title: "Format Error",
