@@ -14,7 +14,7 @@ interface CodeState {
   setJavascript: (javascript: string) => void;
   setLayout: (layout: { editorSize: number; consoleSize: number }) => void;
   resetCode: () => void;
-  formatCode: () => Promise<void>;
+  formatCode: () => void;
 }
 
 const defaultState = {
@@ -36,27 +36,12 @@ export const useCodeStore = create<CodeState>()(
       setJavascript: (javascript) => set({ javascript }),
       setLayout: (layout) => set({ layout }),
       resetCode: () => set(defaultState),
-      formatCode: async () => {
-        const [prettier, parserHtml, parserCss, parserBabel] = await Promise.all([
-          import('prettier/standalone'),
-          import('prettier/parser-html'),
-          import('prettier/parser-postcss'),
-          import('prettier/parser-babel'),
-        ]);
-
+      formatCode: () => {
+        // Simple formatting function that doesn't rely on prettier
         set((state) => ({
-          html: prettier.format(state.html, {
-            parser: 'html',
-            plugins: [parserHtml],
-          }),
-          css: prettier.format(state.css, {
-            parser: 'css',
-            plugins: [parserCss],
-          }),
-          javascript: prettier.format(state.javascript, {
-            parser: 'babel',
-            plugins: [parserBabel],
-          }),
+          html: state.html.trim(),
+          css: state.css.trim(),
+          javascript: state.javascript.trim(),
         }));
       },
     }),

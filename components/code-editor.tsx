@@ -5,18 +5,9 @@ import dynamic from 'next/dynamic';
 import { Card } from '@/components/ui/card';
 import { Skeleton } from '@/components/ui/skeleton';
 import type { EditorProps } from '@monaco-editor/react';
-import type { editor } from 'monaco-editor';
 
 const MonacoEditor = dynamic(
-  () => import('@monaco-editor/react').then((mod) => {
-    // Initialize Monaco Editor
-    mod.loader.config({
-      paths: {
-        vs: 'https://cdn.jsdelivr.net/npm/monaco-editor@0.45.0/min/vs'
-      }
-    });
-    return mod;
-  }),
+  () => import('@monaco-editor/react'),
   { 
     ssr: false,
     loading: () => (
