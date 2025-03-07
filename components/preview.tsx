@@ -6,6 +6,7 @@ import { Card } from '@/components/ui/card';
 import { Skeleton } from '@/components/ui/skeleton';
 import { ResizablePanel, ResizablePanelGroup, ResizableHandle } from '@/components/ui/resizable';
 import { ScrollArea } from '@/components/ui/scroll-area';
+import { format } from 'date-fns';
 
 interface ConsoleMessage {
   type: 'log' | 'error' | 'warn';
@@ -15,7 +16,7 @@ interface ConsoleMessage {
 
 export function Preview() {
   const iframeRef = useRef<HTMLIFrameElement>(null);
-  const { html, css, javascript } = useCodeStore();
+  const { html, css, javascript, layout, setLayout } = useCodeStore();
   const [mounted, setMounted] = useState(false);
   const [consoleMessages, setConsoleMessages] = useState<ConsoleMessage[]>([]);
 
@@ -85,8 +86,8 @@ export function Preview() {
       if (event.data?.type === 'console') {
         const { method, args } = event.data;
         setConsoleMessages(prev => [...prev, {
-          type: method,
-          content: args.map(arg => 
+          type: method as ConsoleMessage['type'],
+          content: args.map((arg: unknown) => 
             typeof arg === 'object' ? JSON.stringify(arg, null, 2) : String(arg)
           ),
           timestamp: Date.now()
@@ -99,6 +100,13 @@ export function Preview() {
     return () => window.removeEventListener('message', handleMessage);
   }, []);
 
+  const handlePanelResize = (sizes: number[]) => {
+    setLayout({
+      ...layout,
+      consoleSize: sizes[1],
+    });
+  };
+
   if (!mounted) {
     return (
       <Card className="h-full">
@@ -109,7 +117,10 @@ export function Preview() {
 
   return (
     <Card className="h-full">
-      <ResizablePanelGroup direction="vertical">
+      <ResizablePanelGroup
+        direction="vertical"
+        onLayout={handlePanelResize}
+      >
         <ResizablePanel defaultSize={70} minSize={30}>
           <iframe
             ref={iframeRef}
@@ -119,7 +130,7 @@ export function Preview() {
           />
         </ResizablePanel>
         <ResizableHandle />
-        <ResizablePanel defaultSize={30} minSize={20}>
+        <ResizablePanel defaultSize={layout.consoleSize} minSize={20}>
           <div className="h-full bg-zinc-950 text-white p-2 rounded-lg">
             <div className="flex items-center justify-between mb-2">
               <h3 className="text-sm font-semibold">Console</h3>
@@ -146,6 +157,9 @@ export function Preview() {
                         'text-green-400 bg-green-950/50'
                       }`}
                     >
+                      <div className="text-xs text-zinc-500 mb-1">
+                        {format(msg.timestamp, 'HH:mm:ss.SSS')}
+                      </div>
                       {msg.content.map((content, j) => (
                         <div key={j} className="whitespace-pre-wrap">{content}</div>
                       ))}
