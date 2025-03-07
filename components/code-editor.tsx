@@ -1,14 +1,30 @@
 'use client';
 
-import { useEffect, useState } from 'react';
+import * as React from 'react';
 import dynamic from 'next/dynamic';
 import { Card } from '@/components/ui/card';
 import { Skeleton } from '@/components/ui/skeleton';
 import type { EditorProps } from '@monaco-editor/react';
+import type { editor } from 'monaco-editor';
 
 const MonacoEditor = dynamic(
-  () => import('@monaco-editor/react').then((mod) => mod.default),
-  { ssr: false }
+  () => import('@monaco-editor/react').then((mod) => {
+    // Initialize Monaco Editor
+    mod.loader.config({
+      paths: {
+        vs: 'https://cdn.jsdelivr.net/npm/monaco-editor@0.45.0/min/vs'
+      }
+    });
+    return mod;
+  }),
+  { 
+    ssr: false,
+    loading: () => (
+      <Card className="h-full">
+        <Skeleton className="w-full h-full" />
+      </Card>
+    )
+  }
 );
 
 interface CodeEditorProps {
@@ -18,9 +34,9 @@ interface CodeEditorProps {
 }
 
 export function CodeEditor({ language, value, onChange }: CodeEditorProps) {
-  const [mounted, setMounted] = useState(false);
+  const [mounted, setMounted] = React.useState(false);
 
-  useEffect(() => {
+  React.useEffect(() => {
     setMounted(true);
   }, []);
 
@@ -57,6 +73,11 @@ export function CodeEditor({ language, value, onChange }: CodeEditorProps) {
           padding: { top: 10, bottom: 10 },
         }}
         onMount={handleEditorDidMount}
+        loading={
+          <Card className="h-full">
+            <Skeleton className="w-full h-full" />
+          </Card>
+        }
       />
     </Card>
   );
